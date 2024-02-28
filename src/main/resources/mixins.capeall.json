@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.7",
+  "package": "com.nonopichy.capeall.mixin",
+  "refmap": "mixins.capeall.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "MixinNetworkPlayerInfo"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
