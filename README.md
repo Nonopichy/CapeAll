@@ -1,3 +1,4 @@
+https://legacy.curseforge.com/minecraft/mc-mods/capeall
 # CapeAll
 ![image](https://github.com/Nonopichy/CapeAll/assets/68911691/cf164cd6-eba1-40cc-8d86-3d18e3248090)
 
