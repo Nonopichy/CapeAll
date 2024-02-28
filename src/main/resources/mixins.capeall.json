@@ -1,0 +1,8 @@
+{
+    "compatibilityLevel": "JAVA_8",
+    "package": "com.nonopichy.capeall.mixin",
+    "refmap": "refmap.capeall.json",
+    "mixins": [],
+    "client": ["MixinNetworkPlayerInfo"],
+    "server": []
+}
