@@ -1,5 +1,6 @@
 https://legacy.curseforge.com/minecraft/mc-mods/capeall
 # CapeAll v2.0 — Capas sem servidor (Só 1.8.9)
+<img width="1920" height="991" alt="2026-03-20_03 53 40" src="https://github.com/user-attachments/assets/8e7fab25-f5a4-4653-9a78-c749dd143018" />
 
 > **Capas para todos os jogadores, em qualquer servidor, sem depender de nenhum site ou servidor externo.**
 
