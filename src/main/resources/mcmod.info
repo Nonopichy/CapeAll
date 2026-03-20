@@ -1,0 +1,16 @@
+[
+{
+  "modid": "capeall",
+  "name": "CapeAll - Nonopichy",
+  "description": "A mod that allows you to use minecraft skins, online with other players with the same mod. To change your cover, go to: https://capeall.000webhostapp.com/ (Author page: https://nonopichy.github.io/)",
+  "version": "1.0.0",
+  "mcversion": "1.8.9",
+  "url": "https://capeall.000webhostapp.com/",
+  "updateUrl": "",
+  "authorList": ["Nonopichy"],
+  "credits": "Thank you manuthebyte!",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
