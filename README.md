@@ -1,5 +1,5 @@
 https://legacy.curseforge.com/minecraft/mc-mods/capeall
-# CapeAll v2.0 — Capas sem servidor (Só 1.8.9)
+# CapeAll v2.0 — Capas sem servidor
 <img width="1920" height="991" alt="2026-03-20_03 53 40" src="https://github.com/user-attachments/assets/8e7fab25-f5a4-4653-9a78-c749dd143018" />
 
 > **Capas para todos os jogadores, em qualquer servidor, sem depender de nenhum site ou servidor externo.**
@@ -37,7 +37,7 @@ Jogador A (com CapeAll)          Jogador B (com CapeAll)
 
 1. Baixe o mod em [Releases](https://github.com/Nonopichy/CapeAll/releases)
 2. Coloque o `.jar` na pasta `mods/` do seu Minecraft
-3. **Requisito:** Minecraft Forge 1.8.9
+3. **Requisito:** Forge 1.8.9, ou Fabric (+ Fabric API) / Forge / NeoForge no 1.21.1 e 26.3
 
 > Não é mais necessário acessar nenhum site. Tudo é configurado dentro do jogo.
 
@@ -48,7 +48,7 @@ Jogador A (com CapeAll)          Jogador B (com CapeAll)
 ### Escolhendo sua capa
 
 1. Entre em qualquer servidor
-2. Pressione **P** para abrir o menu do CapeAll
+2. Pressione **P** (1.8.9) ou **I** (1.21.1 / 26.3) para abrir o menu do CapeAll
 3. Escolha sua capa na grade — o modelo 3D mostra o preview em tempo real
 4. Clique para selecionar — pronto, sua capa é salva e transmitida automaticamente
 
@@ -126,7 +126,7 @@ Os outros clientes com CapeAll monitoram as skin layers dos jogadores próximos.
 
 ## Configuração
 
-O arquivo de configuração fica em `.minecraft/config/capeall.cfg`:
+O arquivo de configuração fica em `.minecraft/config/capeall.cfg` (1.8.9) ou `config/capeall.properties` (1.21.1 / 26.3):
 
 | Opção | Padrão | Descrição |
 |---|---|---|
@@ -152,8 +152,12 @@ O arquivo de configuração fica em `.minecraft/config/capeall.cfg`:
 
 ## Código Fonte
 
-- Branch principal: [capeall-1.8.9](https://github.com/Nonopichy/CapeAll/tree/capeall-1.8.9)
-- Forge 1.8.9 + SpongePowered Mixins
+| Minecraft | Loaders | Branch |
+|---|---|---|
+| 1.8.9 | Forge | [capeall-1.8.9](https://github.com/Nonopichy/CapeAll/tree/capeall-1.8.9) |
+| 1.21.1, 26.3 | Fabric, Forge, NeoForge | [capeall-multiversion](https://github.com/Nonopichy/CapeAll/tree/capeall-multiversion) |
+
+Nas versões novas o `P` virou o atalho vanilla de *Interações sociais*, por isso a tecla padrão é **I**. O protocolo é o mesmo, então os IDs das capas são iguais em todas as versões.
 - Licença: LGPL v2.1
 
 ---
