@@ -1,0 +1,28 @@
+pluginManagement {
+    repositories {
+        maven { url = 'https://maven.fabricmc.net/' }
+        maven { url = 'https://maven.minecraftforge.net/' }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'capeall'
+
+include 'core'
+
+// Every versions/<minecraft>/<loader> folder becomes the project :<minecraft>:<loader> (one jar each).
+file('versions').eachDir { mc ->
+    include ":$mc.name"
+    project(":$mc.name").projectDir = mc
+    mc.eachDir { loader ->
+        if (loader.name in ['fabric', 'forge', 'neoforge']) {
+            include ":$mc.name:$loader.name"
+            project(":$mc.name:$loader.name").projectDir = loader
+        }
+    }
+}

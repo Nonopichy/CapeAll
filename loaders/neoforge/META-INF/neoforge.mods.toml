@@ -1,0 +1,20 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="Apache-2.0"
+
+[[mods]]
+modId="capeall"
+version="${version}"
+displayName="CapeAll"
+authors="Nonopichy"
+description='''Capas para todos os jogadores, em qualquer servidor, sem servidor externo (P2P via skin layers). Tecla I abre o menu.'''
+
+[[mixins]]
+config="capeall.mixins.json"
+
+[[dependencies.capeall]]
+    modId="minecraft"
+    type="required"
+    versionRange="[${minecraft_version}]"
+    ordering="NONE"
+    side="CLIENT"

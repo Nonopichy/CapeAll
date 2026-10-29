@@ -1,184 +1,93 @@
-buildscript {
-    repositories {
-        maven { url "https://maven.minecraftforge.net" }
-        maven { url 'https://repo.spongepowered.org/maven'}
-    }
-    dependencies {
-        classpath "net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT"
-        classpath 'org.spongepowered:mixingradle:0.6-SNAPSHOT'
-    }
-}
-
 plugins {
-    id "java"
-    id "com.github.johnrengelman.shadow" version "2.0.4"
+    id 'net.fabricmc.fabric-loom' version '1.19.3' apply false
+    id 'net.fabricmc.fabric-loom-remap' version '1.19.3' apply false
+    id 'net.minecraftforge.gradle' version '7.0.40' apply false
+    id 'net.neoforged.moddev' version '2.0.148' apply false
 }
 
-apply plugin: "net.minecraftforge.gradle.forge"
-apply plugin: 'org.spongepowered.mixin'
-
-//TODO: Change the version, group, and archivesBaseName to your own.
-version = "2.0" // The version number of your mod.
-group = "com.nonopichy" // This is the group of the mod (usually domain or your name -> at.manuthebyte)
-archivesBaseName = "capeall" // This is the name of the jar that is generated.
-
-sourceCompatibility = targetCompatibility = 1.8 // Java version to compile for.
-compileJava.options.encoding = "UTF-8" // Make sure that the encoding is set to UTF-8, so we have no encoding issues.
-
-minecraft {
-    version = "1.8.9-11.15.1.2318-1.8.9" // Version 1.8.9
-    runDir = "run" // Where to put the forge run data (mods, configs, etc.), in a normal minecraft installation this is .minecraft
-    mappings = "stable_22" // The mappings for 1.8.9
-    makeObfSourceJar = false // Disables the creation of a source jar
+// core: plain Java, no Minecraft on its classpath (so nothing version-specific can sneak in).
+// Built on its own only for that check and its tests; the loader jars compile its sources directly.
+project(':core') {
+    apply plugin: 'java'
+    java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+    repositories { mavenCentral() }
+    dependencies {
+        testImplementation platform('org.junit:junit-bom:6.1.3')
+        testImplementation 'org.junit.jupiter:junit-jupiter'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+    tasks.named('test') { useJUnitPlatform() }
 }
 
-// This is the configuration for the shadow plugin, which is used to add libraries to the jar.
-configurations {
-    shade
-    compile.extendsFrom(shade)
-}
+// Configures every :<minecraft>:<loader> project. Versions come from versions/<minecraft>/version.properties.
+subprojects {
+    def loader = name
+    if (!(loader in ['fabric', 'forge', 'neoforge'])) return
 
-// Configures the SpongePowered Repository
-repositories {
-    maven { url 'https://repo.spongepowered.org/maven/' }
-}
+    def mc = new Properties()
+    parent.file('version.properties').withInputStream { mc.load(it) }
+    // 26.x and newer ship unobfuscated: no mappings, no remapping.
+    def obfuscated = mc.minecraft_version.startsWith('1.')
 
-def systemOs = System.getProperty("os.name").toLowerCase(Locale.ENGLISH)
+    apply plugin: 'java'
+    version = mod_version
+    group = 'com.nonopichy'
+    base.archivesName = "capeall-$loader-$mc.minecraft_version"
+    java.toolchain.languageVersion = JavaLanguageVersion.of(mc.java_version as int)
+    tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 
-/**
- * This is where we bundle mixins into the jar.
- * shade -> bundles the library into the jar
- * compile -> library only available at compile time (not accessible at runtime)
- */
-dependencies {
-    shade('org.spongepowered:mixin:0.7.10-SNAPSHOT') {
-        exclude module: 'launchwrapper'
-        exclude module: 'guava'
-        exclude module: 'gson'
-        exclude module: 'commons-io'
-        exclude module: 'log4j-core'
+    // core (no Minecraft code) + common code of this Minecraft version + loader metadata + src/main (entrypoint)
+    sourceSets.main {
+        java.srcDirs rootProject.file('core/src/main/java'), parent.file('common/src/main/java')
+        resources.srcDirs rootProject.file('core/src/main/resources'), rootProject.file("loaders/$loader")
     }
 
-    if (systemOs.contains("mac"))
-    {
-        compile 'org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209'
-        compile 'org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209'
-        compile 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-nightly-20150209'
+    def props = [version: mod_version, minecraft_version: mc.minecraft_version, java_version: mc.java_version]
+    processResources {
+        inputs.properties props
+        filesMatching(['fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) { expand props }
     }
-    else if (systemOs.contains("linux"))
-    {
-        compile 'org.lwjgl.lwjgl:lwjgl_util:2.9.4-babric.1'
-        compile 'org.lwjgl.lwjgl:lwjgl:2.9.4-babric.1'
-        compile 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-babric.1'
-    }
-}
 
-if (systemOs.contains("mac"))
-{
-    configurations.all
-    {
-        resolutionStrategy
-        {
-            dependencySubstitution
-            {
-                substitute module('org.lwjgl.lwjgl:lwjgl_util:2.9.2-nightly-201408222') with module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209')
-                substitute module('org.lwjgl.lwjgl:lwjgl:2.9.2-nightly-201408222') with module('org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209')
-            }
-            force 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-nightly-20150209'
+    if (loader == 'fabric') {
+        apply plugin: obfuscated ? 'net.fabricmc.fabric-loom-remap' : 'net.fabricmc.fabric-loom'
+        def modImplementation = obfuscated ? 'modImplementation' : 'implementation'
+        dependencies {
+            minecraft "com.mojang:minecraft:$mc.minecraft_version"
+            if (obfuscated) mappings loom.officialMojangMappings()
+            add modImplementation, "net.fabricmc:fabric-loader:$fabric_loader_version"
+            add modImplementation, "net.fabricmc.fabric-api:fabric-api:$mc.fabric_api_version"
         }
     }
-} else if (systemOs.contains("linux"))
-{
-    configurations.all
-    {
-        resolutionStrategy
-        {
-            dependencySubstitution
-            {
-                substitute module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209') using module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-babric.1')
-                substitute module('org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209') using module('org.lwjgl.lwjgl:lwjgl:2.9.4-babric.1')
+
+    if (loader == 'forge') {
+        apply plugin: 'net.minecraftforge.gradle'
+        minecraft {
+            if (obfuscated) mappings channel: 'official', version: mc.minecraft_version
+            runs {
+                register('client') {
+                    workingDir = layout.projectDirectory.dir('run')
+                    args '--mixin.config=capeall.mixins.json'
+                }
             }
-            force 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-babric.1'
+        }
+        repositories {
+            minecraft.mavenizer(it)
+            maven fg.forgeMaven
+            maven fg.minecraftLibsMaven
+            mavenCentral()
+        }
+        dependencies {
+            implementation minecraft.dependency("net.minecraftforge:forge:$mc.minecraft_version-$mc.forge_version")
+        }
+        jar.manifest.attributes('MixinConfigs': 'capeall.mixins.json')
+    }
+
+    if (loader == 'neoforge') {
+        apply plugin: 'net.neoforged.moddev'
+        neoForge {
+            version = mc.neoforge_version
+            runs { client { client() } }
+            mods { capeall { sourceSet sourceSets.main } }
         }
     }
 }
-
-
-processResources {
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    // Replaces version in mcmod.info with the project version.
-    from(sourceSets.main.resources.srcDirs) {
-        include "mcmod.info"
-
-        //replace version and mcversion
-        expand "version":project.version, "mcversion":project.minecraft.version
-    }
-
-    // Copies all other resources.
-    from(sourceSets.main.resources.srcDirs) {
-        exclude "mcmod.info"
-    }
-
-    rename '(.+_at.cfg)', 'META-INF/$1'
-}
-
-// This is the configuration for the shadow plugin, which is used to add libraries to the jar.
-shadowJar {
-    dependencies {}
-    configurations = [project.configurations.shade] // Adds the gradle configuration "shade" so we can use it.
-    duplicatesStrategy DuplicatesStrategy.EXCLUDE // Prevents duplicates
-    classifier ""
-}
-
-reobf {
-    // Reobfuscates the jar.
-    shadowJar {}
-}
-
-/**
- * Adds the manifest values
- * FMLCorePlugin -> Put the Mixin Loader here
- * ModSide -> Client or Server
- * TweakClass -> Mixin tweaker
- * MixinConfigs -> Put your mixin config here (mixins.MODID.json)
- */
-//TODO: Change the FMLCorePlugin to the mixin loader with your own package
-//TODO: Add your own MixinConfig(s)
-jar {
-    manifest.attributes(
-        "FMLCorePlugin" : "com.nonopichy.capeall.mixin.MixinLoader",
-        "ForceLoadAsMod": true,
-        "TweakOrder": 0,
-        "ModSide": "CLIENT",
-        'FMLCorePluginContainsFMLMod': true,
-        'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
-        'MixinConfigs': 'mixins.capeall.json'
-    )
-}
-
-// This adds the refmap.
-// (You do not need to create the refmap, it is created automatically by the mixin plugin)
-//TODO: Change the refmap name to your own
-sourceSets {
-    main {
-        ext.refMap = "mixins.capeall.refmap.json"
-    }
-}
-
-// Task that will build the mod and copy it to your instance (need to change the path to your instance)
-//TODO: (Optional) Change the path to your instance
-task buildAndCopyToMods(type: Copy, dependsOn: 'build') {
-    from "build/libs"
-    into "<yourRealInstance>/.minecraft/mods"
-    include "*.jar"
-}
-
-// Task that will build the mod and put it in the "run" folder, and then run the client.
-task buildCopyToRunModsAndRun(type: Copy, dependsOn: 'build') {
-    from "build/libs"
-    into "run/mods"
-    include "*.jar"
-}
-buildCopyToRunModsAndRun.finalizedBy runClient

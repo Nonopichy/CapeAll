@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "capeall",
+  "version": "${version}",
+  "name": "CapeAll",
+  "description": "Capas para todos os jogadores, em qualquer servidor, sem servidor externo (P2P via skin layers). Tecla I abre o menu.",
+  "authors": ["Nonopichy"],
+  "contact": {
+    "sources": "https://github.com/Nonopichy/CapeAll"
+  },
+  "license": "Apache-2.0",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.nonopichy.capeall.fabric.CapeAllFabric"]
+  },
+  "mixins": ["capeall.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "${minecraft_version}",
+    "java": ">=${java_version}",
+    "fabric-api": "*"
+  }
+}

@@ -1,43 +1,59 @@
-# Template for Forge 1.8.9 + Mixins
+# CapeAll — Fabric / Forge / NeoForge (1.21.1 e 26.3)
 
-**Note:** I have only tested this with IntelliJ, but it should work with Eclipse just fine.
+Capas para todos os jogadores, em qualquer servidor vanilla, sem servidor externo: os clientes com o mod
+trocam o ID da capa entre si pelas **skin layers** (veja o [README principal](https://github.com/Nonopichy/CapeAll)).
 
-## Introduction
+| Minecraft | Fabric | Forge | NeoForge |
+|---|---|---|---|
+| 1.21.1 | ✔ (precisa do Fabric API) | ✔ | ✔ |
+| 26.3   | ✔ (precisa do Fabric API) | ✔ | ✔ |
 
-This repository includes a plug-and-play project template for 1.8.9 Forge Development with Mixins.
+Tecla padrão: **I** (dá pra trocar em Controles). O `P` do 1.8.9 virou o atalho vanilla de *Interações sociais*.
+Config: `config/capeall.properties` (`selectedCape`, `ticksPerFrame`, `broadcastInterval`).
+O protocolo é o mesmo do 1.8.9 (mesmos IDs de capa).
 
-It contains an example mod with an example mixin (`MixinMinecraft.java`).
+## Build
 
-## Setup
+```
+./gradlew build
+```
 
-1. Download or clone this repository
-2. Open it as a Project
-3. The gradle setup should be running automatically, if not, use `./gradlew`
-4. Run the gradle task `gradle setupDecompWorkspace` (if you are getting the error "Heap Memory too low", increase the memory by adding `-Xmx4G` or `-Xmx8G` to the gradle task, depending on how much RAM you have; Right-Click the Gradle Task -> Modify Run Configuration... -> Modify Options -> Add VM Options)
-5. If the setup is done, try to run the client with the example mod (use my prebuilt task `gradle buildCopyToRunModsAndRun` if you want -> combines building, copying to the run mods folder and running)
-6. Nice! You just setup your working environment for 1.8.9 Forge Development with Mixins! If everything worked correctly you should find the following three things in your console:
-   1. `[ExampleMod] Injecting with IFMLLoadingPlugin.`
-   2. `Mixin worked!`
-   3. `DIRT BLOCK >> tile.dirt`
+Precisa só de Java 17+ pra rodar o `gradlew`; o resto o Gradle baixa sozinho (JDK 25 pro daemon, 21/25 pra compilar).
+Os jars saem em `versions/<minecraft>/<loader>/build/libs/capeall-<loader>-<minecraft>-<versão>.jar`.
 
-## Post-Setup
+## Estrutura
 
-Do the TODOs that are marked in:
+```
+core/                       Java puro, sem Minecraft: protocolo, capas, config, layout/cliques do menu
+                            + texturas, lang e capeall.mixins.json (iguais em todas as versões)
+versions/<mc>/
+  version.properties        versões do Minecraft, Java e de cada loader
+  common/                   código que muda por versão do Minecraft (vanilla only):
+                              CapeAllClient  (implementa Platform: ler/mudar skin layers, chat, tecla)
+                              gui/CapeScreen (implementa CapeMenu.Canvas: fill, text, blit, modelo 3D...)
+                              mixin/         (getSkin -> capa, tick)
+  fabric|forge|neoforge/    só o entrypoint (~15 linhas) + pack.mcmeta no Forge
+loaders/                    fabric.mod.json, mods.toml, neoforge.mods.toml (templates compartilhados)
+build.gradle                configura todo versions/<mc>/<loader> automaticamente
+```
 
-- `build.gradle`
-- `src/main/java/com/example/examplemod/mixins/MixinLoader.java`
+`core` compila sozinho sem Minecraft no classpath — se algo de versão vazar pra lá, o build quebra.
+O teste do protocolo (`core/src/test`) roda no `./gradlew build`.
 
-Change the data in the `resources/mcmod.info` and rename and change the data of `resources/mixins.examplemod.json`
+## Nova versão do Minecraft
 
-## Need help?
+1. Copie a pasta da versão mais próxima: `versions/26.3` → `versions/<nova>`.
+2. Ajuste `version.properties` (Minecraft, Java, Fabric API, Forge, NeoForge).
+3. `./gradlew build` e corrija o que quebrar — quase sempre só `common/` (nomes do vanilla mudam) e,
+   às vezes, o entrypoint do loader. `core/` não muda.
+4. Forge: o `pack.mcmeta` da pasta forge leva o formato de pack da versão.
 
-If you followed these steps but something went wrong, you can open an issue or contact me (see contact options on my profile), I am happy to help!
+Loader que não existir pra versão: apague a pasta dele, o `settings.gradle` só inclui as que existem.
+Versões até 1.21.x usam mapeamento Mojang + remap no Fabric; 26.x em diante não têm ofuscação.
 
-## License
+## Mudanças em relação ao v2.0 (1.8.9)
 
-You can read all the applying licenses in the file `LICENSE.md`
-
-## Support
-
-If you like this project, feel free to support me!<br><br>
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/manuthebyte)
+- Receptor lê cada frame no meio, não na borda: 1 tick de atraso de rede fazia perder ou trocar a capa.
+- Preview do menu agora mostra a capa sob o mouse (antes sempre mostrava a selecionada).
+- Se desconectar no meio de uma transmissão, as skin layers reais voltam.
+- Config em `capeall.properties` (antes `capeall.cfg` do Forge).
