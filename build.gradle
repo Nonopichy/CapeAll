@@ -76,10 +76,63 @@ subprojects {
             maven fg.minecraftLibsMaven
             mavenCentral()
         }
+        def forge = minecraft.dependency("net.minecraftforge:forge:$mc.minecraft_version-$mc.forge_version")
         dependencies {
-            implementation minecraft.dependency("net.minecraftforge:forge:$mc.minecraft_version-$mc.forge_version")
+            implementation forge
         }
         jar.manifest.attributes('MixinConfigs': 'capeall.mixins.json')
+
+        // Forge 1.20.4 and older runs with SRG names (what ForgeGradle 6 did): the mixin annotation processor
+        // writes the refmap and ForgeAutoRenamingTool reobfuscates the jar, both from Mavenizer's official->SRG map.
+        if (mc.forge_legacy) {
+            def tsrg = layout.buildDirectory.file('reobf/official-srg.tsrg')
+            def refmap = layout.buildDirectory.file('reobf/capeall.refmap.json')
+            def toSrg = forge.toSrgFile
+            def srgMappings = tasks.register('srgMappings') {
+                inputs.file(toSrg)
+                outputs.file(tsrg)
+                doLast {
+                    // tsrg2 -> tsrg (what the mixin AP reads): drop the header and the parameter lines
+                    def src = toSrg.get()
+                    def input = src.name.endsWith('.gz') ? new java.util.zip.GZIPInputStream(src.newInputStream()) : src.newInputStream()
+                    tsrg.get().asFile.withWriter { w ->
+                        input.withReader { r -> r.eachLine { if (!it.startsWith('tsrg2') && !it.startsWith('\t\t')) w.writeLine(it) } }
+                    }
+                }
+            }
+            configurations { fart }
+            dependencies {
+                annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+                fart 'net.minecraftforge:ForgeAutoRenamingTool:1.1.2:all'
+            }
+            tasks.named('compileJava', JavaCompile) {
+                dependsOn srgMappings
+                options.compilerArgs += ["-AreobfTsrgFile=${tsrg.get().asFile}", "-AoutRefMapFile=${refmap.get().asFile}",
+                                         '-AdefaultObfuscationEnv=searge', '-AmappingTypes=tsrg']
+            }
+            jar {
+                from(refmap)
+                archiveClassifier = 'dev'
+                destinationDirectory = layout.buildDirectory.dir('devlibs')
+            }
+            def reobfJar = tasks.register('reobfJar', JavaExec) {
+                def input = tasks.jar.archiveFile
+                def output = layout.buildDirectory.file("libs/capeall-$loader-$mc.minecraft_version-${version}.jar")
+                def libs = sourceSets.main.compileClasspath
+                inputs.file(input)
+                inputs.file(tsrg)
+                inputs.files(libs)
+                outputs.file(output)
+                classpath = configurations.fart
+                mainClass = 'net.minecraftforge.fart.Main'
+                standardOutput = OutputStream.nullOutputStream() // details go to build/reobf/fart.log
+                // The libraries tell it which of our methods override Minecraft ones (CapeScreen.render -> m_88315_...).
+                argumentProviders.add({ ['--input', input.get().asFile.path, '--output', output.get().asFile.path,
+                                         '--map', tsrg.get().asFile.path, '--disable-abstract-param',
+                                         '--log', layout.buildDirectory.file('reobf/fart.log').get().asFile.path] + libs.collectMany { ['--lib', it.path] } } as CommandLineArgumentProvider)
+            }
+            tasks.named('assemble') { dependsOn reobfJar }
+        }
     }
 
     if (loader == 'neoforge') {

@@ -1,10 +1,11 @@
-# CapeAll — Fabric / Forge / NeoForge (1.21.1 e 26.3)
+# CapeAll — Fabric / Forge / NeoForge (1.20.2, 1.21.1 e 26.3)
 
 Capas para todos os jogadores, em qualquer servidor vanilla, sem servidor externo: os clientes com o mod
 trocam o ID da capa entre si pelas **skin layers** (veja o [README principal](https://github.com/Nonopichy/CapeAll)).
 
 | Minecraft | Fabric | Forge | NeoForge |
 |---|---|---|---|
+| 1.20.2 | — | ✔ | — |
 | 1.21.1 | ✔ (precisa do Fabric API) | ✔ | ✔ |
 | 26.3   | ✔ (precisa do Fabric API) | ✔ | ✔ |
 
@@ -50,6 +51,8 @@ O teste do protocolo (`core/src/test`) roda no `./gradlew build`.
 
 Loader que não existir pra versão: apague a pasta dele, o `settings.gradle` só inclui as que existem.
 Versões até 1.21.x usam mapeamento Mojang + remap no Fabric; 26.x em diante não têm ofuscação.
+Forge até 1.20.4 roda com nomes SRG (1.20.6+ já usa os nomes da Mojang): põe `forge_legacy=true` no `version.properties` e o build gera o refmap
+do Mixin e reobfusca o jar (o que o ForgeGradle 6 fazia), usando o mapeamento oficial→SRG do próprio ForgeGradle 7.
 
 ## Mudanças em relação ao v2.0 (1.8.9)
 

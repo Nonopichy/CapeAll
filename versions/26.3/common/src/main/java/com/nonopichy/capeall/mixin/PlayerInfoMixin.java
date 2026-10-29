@@ -1,13 +1,11 @@
 package com.nonopichy.capeall.mixin;
 
-import com.mojang.authlib.GameProfile;
 import com.nonopichy.capeall.CapeAll;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerSkin;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -15,12 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PlayerInfo.class)
 public abstract class PlayerInfoMixin {
 
-    @Shadow
-    public abstract GameProfile getProfile();
-
     @Inject(method = "getSkin", at = @At("RETURN"), cancellable = true)
     private void capeall$cape(CallbackInfoReturnable<PlayerSkin> cir) {
-        String cape = CapeAll.capeFor(getProfile().name());
+        // Plain call instead of @Shadow: reobfuscation (SRG versions) remaps it like any other call.
+        String cape = CapeAll.capeFor(((PlayerInfo) (Object) this).getProfile().name());
         if (cape == null) return;
 
         PlayerSkin skin = cir.getReturnValue();
